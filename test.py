@@ -43,7 +43,7 @@ if __name__ == '__main__':
     res = requests.get("https://world.huanqiu.com/article/42bFZPwWEa7")
     print(parse_response(res))
 
-    with open("./data/news-content.json", 'ab+') as json_file:
+    with open("data/news-content.back", 'ab+') as json_file:
         json_file.seek(-2, 2)
         json_file.write(b"]")
     #     ts = json_file.read()

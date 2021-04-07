@@ -14,3 +14,15 @@ class ReadConfig:
         self.cf = configparser.RawConfigParser()
         self.cf.read(configpath)
 
+    def get_sections(self):
+        return self.cf.sections()
+
+    def get_options(self, section):
+        return self.cf.options(section)
+
+    def get_content(self, section):
+        result = {}
+        for option in self.get_options(section):
+            value = self.cf.get(section, option)
+            result[option] = int(value) if value.isdigit() else value
+        return result

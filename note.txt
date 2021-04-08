@@ -1,0 +1,7 @@
+time:2021-04-08 07:59
+log:
+    1.Q: when there a few news(for example, you have crawled news, and then you restart this program within minutes), you will find that your program are blocking somewhere. But
+         when there a lot of news this bug will not happen.
+    2.S: I put some debug sentence near some possible wrong codes, finally I found that queue block cause this bug.
+         When the only one element(for example, there is just one) is got by some thread, the queue is empty. If the block para is not be setted,
+         the other threads are all waiting to get element from queue.

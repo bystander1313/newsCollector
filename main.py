@@ -40,6 +40,7 @@ class ParserNewsinfoThread(threading.Thread):
         global stop_flag_lock
         global stop_flag
 
+        print("parserNewsInfoThread {} start".format(self.name))
         while not stop_flag:
             try:
                 with page_lock:
@@ -60,7 +61,7 @@ class ParserNewsinfoThread(threading.Thread):
                             full_url = world_article_base_url + str(aid)  # 每条新闻的完整url
                             url_queue.put({"ctime": ctime, "title": title, "summary": summary, "url": full_url})
 
-                            news_info_fp_lock.acquire(timeout=1.5)
+                            news_info_fp_lock.acquire(timeout=1)
                             self.news_info_fp.write(json.dumps(news, indent=4, sort_keys=True))
                             self.news_info_fp.write(",")
                             news_info_fp_lock.release()
@@ -73,6 +74,7 @@ class ParserNewsinfoThread(threading.Thread):
                             break
             except:
                 print('error')
+        print("parserNewsInfoThread {} end".format(self.name))
 
 
 class CrawlerUrlThread(threading.Thread):
@@ -82,9 +84,12 @@ class CrawlerUrlThread(threading.Thread):
         self.res_queue = res_queue
 
     def run(self):
+        print("CrawlerUrlThread {} start".format(self.name))
+
         while crawl_url_exit_flag:
             try:
-                item = url_queue.get()
+                item = url_queue.get(block=False)
+
                 url = item["url"]
                 headers = {
                     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.90 Safari/537.36'
@@ -93,8 +98,13 @@ class CrawlerUrlThread(threading.Thread):
                 item["res"] = res
                 res_queue.put(item)
                 print("CrawlerUrlThread-{}: {}".format(self.name, url))
+                print(crawl_url_exit_flag)
+            except queue.Empty:
+                continue
             except:
                 pass
+
+        print("CrawlerUrlThread {} end".format(self.name))
 
 
 class ParserNewsThread(threading.Thread):
@@ -108,19 +118,21 @@ class ParserNewsThread(threading.Thread):
 
         while parse_content_exit_flag:
             try:
-                item = res_queue.get()
+                item = res_queue.get(block=False)
                 ctime = item["ctime"]
                 res = item["res"]
                 news_detail = self.parse_response(res)
                 news_detail["ctime"] = item["ctime"]
                 news_detail["title"] = item["title"]
                 news_detail["summary"] = item["summary"]
-                news_content_fp_lock.acquire(timeout=1.5)
+                news_content_fp_lock.acquire(timeout=1)
                 self.news_content_fp.write(
                         json.dumps(news_detail, indent=4, sort_keys=True))
                 self.news_content_fp.write(",")
                 news_content_fp_lock.release()
                 print("ParserNewsThread-{}: {}".format(self.name, ctime))
+            except queue.Empty:
+                continue
             except:
                 pass
 
@@ -235,7 +247,7 @@ if __name__ == '__main__':
     #
     # print("The time of latest news saved:{}\n".format(history_json["huanqiu_world_last_time"]))
     #
-    # start_time = time.time()
+    start_time = time.time()
 
     news_info_fp = open(news_info_store, 'w+', encoding="utf-8")
     news_content_fp = open(news_content_store, 'w+', encoding="utf-8")
@@ -303,8 +315,8 @@ if __name__ == '__main__':
             requests.get(world_base_url.format(0), headers=HEADER).json().get("list")[0].get("ctime"))
         history_json_file.write(json.dumps(history_json, indent=4, sort_keys=True))
 
-    # end_time = time.time()
-    # print("Start time:{}\nEnd time:{}\ntotal time:{:.2f}".format(tools.time_stamp_for_13(int(start_time)),
-    #                                                             tools.time_stamp_for_13(int(end_time)),
-    #                                                             end_time - start_time))
+    end_time = time.time()
+    print("Start time:{}\nEnd time:{}\ntotal time:{:.2f}".format(tools.time_stamp_for_13(int(start_time)),
+                                                                tools.time_stamp_for_13(int(end_time)),
+                                                                end_time - start_time))
 
